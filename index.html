@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tweak Studio — Sonic Branding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Archivo:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F4EF;
+    --paper-dim:#EFEBE1;
+    --ink:#15161A;
+    --ink-soft:#2B2C30;
+    --signal:#E13B22;
+    --accent-music:#1E6E62;
+    --success:#1E8E3E;
+    --line:#D9D3C4;
+    --mute:#6B675C;
+    --radius:2px;
+    --wrap: min(980px, 88vw);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html, body{ height:100%; overflow:hidden; }
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Archivo', sans-serif;
+    font-size:16px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+
+  .mono{ font-family:'Geist Mono', monospace; letter-spacing:0.02em; }
+
+  .eyebrow{
+    font-family:'Geist Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--mute);
+  }
+
+  h1, h2, h3{ font-family:'Geist', sans-serif; }
+
+  /* ---------- CHROME ---------- */
+  .deck-header{
+    position:fixed; top:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px clamp(20px, 4vw, 48px);
+    z-index:20;
+    pointer-events:none;
+  }
+  .deck-header .brand{ font-family:'Geist', sans-serif; font-weight:600; font-size:14px; letter-spacing:0.01em; }
+  .deck-header .count{ font-size:12px; color:var(--mute); }
+
+  .deck-footer{
+    position:fixed; bottom:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:center;
+    gap:20px;
+    padding:22px 0 28px;
+    z-index:20;
+  }
+
+  .nav-btn{
+    width:36px; height:36px;
+    border:1px solid var(--line);
+    border-radius:50%;
+    background:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .nav-btn:hover{ border-color:var(--ink); }
+  .nav-btn:disabled{ opacity:0.3; cursor:default; }
+  .nav-btn:disabled:hover{ border-color:var(--line); }
+  .nav-btn svg{ width:14px; height:14px; stroke:var(--ink); fill:none; stroke-width:2; }
+
+  .dots{ display:flex; align-items:center; gap:9px; }
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--line);
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+    border:none; padding:0;
+  }
+  .dot:hover{ background:var(--mute); }
+  .dot.active{ background:var(--signal); transform:scale(1.3); }
+
+  .click-zone{
+    position:fixed; top:0; bottom:0; width:14%;
+    z-index:10; cursor:pointer;
+  }
+  .click-zone.left{ left:0; }
+  .click-zone.right{ right:0; }
+
+  /* ---------- SLIDES ---------- */
+  .deck{ position:relative; width:100vw; height:100vh; }
+
+  .slide{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:100px clamp(20px, 6vw, 48px);
+    opacity:0;
+    transform:translateY(14px);
+    transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .slide.active{ opacity:1; transform:translateY(0); pointer-events:auto; z-index:2; }
+
+  .slide-inner{ width:var(--wrap); max-width:100%; }
+
+  .slide-eyebrow{ margin-bottom:14px; }
+  .slide-eyebrow .idx{ color:var(--signal); }
+
+  /* ---- video slides ---- */
+  .slide-video .slide-inner{ width:min(880px, 92vw); text-align:center; }
+  .video-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:16/9;
+    background:var(--ink);
+    border-radius:var(--radius);
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .video-frame video{ width:100%; height:100%; object-fit:cover; display:block; }
+  .video-frame .play-btn{
+    position:absolute; inset:0; margin:auto;
+    width:64px; height:64px;
+    border-radius:50%;
+    background:rgba(246,244,239,0.94);
+    border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .video-frame .play-btn:hover{ transform:scale(1.06); background:#fff; }
+  .video-frame .play-btn svg{ width:22px; height:22px; fill:var(--ink); margin-left:3px; }
+  .video-frame.is-playing .play-btn{ display:none; }
+  .video-frame.is-playing video{ object-fit:contain; }
+
+  .video-caption{
+    margin-top:22px;
+    display:flex; align-items:baseline; justify-content:center; gap:14px;
+  }
+  .video-caption h2{ font-size:clamp(20px, 2.4vw, 26px); font-weight:600; }
+  .video-caption .tags{ display:flex; gap:8px; }
+  .tag{
+    font-family:'Geist Mono', monospace;
+    font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    padding:4px 8px; border-radius:2px; border:1px solid var(--line); color:var(--mute);
+  }
+
+  /* ---- process slide ---- */
+  .slide-process .slide-inner{ width:min(1040px, 92vw); }
+  .process-head h2{ font-size:clamp(26px, 3.4vw, 40px); font-weight:600; margin-bottom:8px; }
+  .process-head p{ color:var(--mute); max-width:640px; font-size:15px; margin-bottom:32px; }
+
+  .how-subsection + .how-subsection{ margin-top:30px; }
+  .how-subhead{ font-size:13px; font-family:'Geist Mono', monospace; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent-music); margin-bottom:6px; }
+  .how-intro{ font-size:14px; color:var(--mute); margin-bottom:14px; max-width:620px; }
+
+  .style-grid, .scene-compare-3{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;
+  }
+  .scene-compare-3{ grid-template-columns:repeat(3, 1fr); max-width:640px; }
+
+  .frame{
+    position:relative; aspect-ratio:16/10; border-radius:var(--radius);
+    overflow:hidden; background:var(--ink); border:1px solid var(--line);
+  }
+  .frame video{ width:100%; height:100%; object-fit:cover; display:block; }
+  .frame .play-btn{
+    position:absolute; inset:0; margin:auto; width:30px; height:30px; border-radius:50%;
+    background:rgba(246,244,239,0.92); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .frame .play-btn svg{ width:11px; height:11px; fill:var(--ink); margin-left:1px; }
+  .frame.is-playing .play-btn{ display:none; }
+
+  .style-label{ margin-top:6px; font-size:11px; font-family:'Geist Mono', monospace; color:var(--mute); }
+  .style-label-selected{ color:var(--success); }
+
+  /* ---- statement slides (impact / constraints / scope) ---- */
+  .slide-statement .slide-inner{ width:min(820px, 90vw); }
+  .statement-head h2{ font-size:clamp(28px, 4vw, 44px); font-weight:600; line-height:1.15; margin-bottom:36px; }
+  .statement-head .accent{ color:var(--signal); }
+
+  .impact-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .impact-card{
+    border:1px solid var(--line); border-radius:var(--radius); padding:26px 20px;
+    background:var(--paper-dim);
+  }
+  .impact-card .num{ font-family:'Geist Mono', monospace; font-size:12px; color:var(--signal); margin-bottom:14px; }
+  .impact-card p{ font-size:16px; font-weight:500; line-height:1.35; }
+
+  .constraint-block{ border-left:2px solid var(--signal); padding-left:24px; }
+  .constraint-block .not-line{ font-size:15px; color:var(--mute); margin-bottom:10px; }
+  .constraint-block .not-line strong{ color:var(--ink-soft); font-weight:500; text-decoration:line-through; text-decoration-color:var(--signal); }
+  .constraint-block .is-line{ font-size:clamp(20px,2.6vw,26px); font-weight:500; line-height:1.4; }
+
+  .scope-list{ display:flex; flex-direction:column; gap:0; }
+  .scope-item{
+    display:flex; align-items:baseline; gap:18px;
+    padding:22px 0; border-bottom:1px solid var(--line);
+  }
+  .scope-item:first-child{ border-top:1px solid var(--line); }
+  .scope-item .scope-num{ font-family:'Geist Mono', monospace; font-size:13px; color:var(--signal); min-width:24px; }
+  .scope-item .scope-text h3{ font-size:19px; font-weight:600; margin-bottom:4px; }
+  .scope-item .scope-text p{ font-size:14px; color:var(--mute); }
+
+  @media (max-width: 720px){
+    .style-grid{ grid-template-columns:repeat(2,1fr); }
+    .scene-compare-3{ grid-template-columns:repeat(1,1fr); max-width:320px; }
+    .impact-grid{ grid-template-columns:1fr; }
+    .click-zone{ width:10%; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="deck-header">
+    <span class="brand mono">Tweak Studio — Sonic Branding</span>
+    <span class="count mono"><span id="curIdx">01</span> / 06</span>
+  </header>
+
+  <div class="click-zone left" id="zoneLeft" aria-label="Previous slide"></div>
+  <div class="click-zone right" id="zoneRight" aria-label="Next slide"></div>
+
+  <main class="deck" id="deck">
+
+    <!-- 1. Mochatrade -->
+    <section class="slide slide-video active" data-slide="0">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">01</span> — Past Work</div>
+        <div class="video-frame" data-video="videos/mocha2.mp4">
+          <video muted playsinline preload="metadata"><source src="videos/mocha2.mp4" type="video/mp4"></video>
+          <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+        </div>
+        <div class="video-caption">
+          <h2>Mochatrade — Product Launch</h2>
+          <span class="tags"><span class="tag">Sound Design</span><span class="tag">Music Production</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Lanesurf -->
+    <section class="slide slide-video" data-slide="1">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">02</span> — Past Work</div>
+        <div class="video-frame" data-video="videos/lanesurf1.mp4">
+          <video muted playsinline preload="metadata"><source src="videos/lanesurf1.mp4" type="video/mp4"></video>
+          <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+        </div>
+        <div class="video-caption">
+          <h2>Lanesurf — Product Launch</h2>
+          <span class="tags"><span class="tag">Sound Design</span><span class="tag">Music Production</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Process -->
+    <section class="slide slide-process" data-slide="2">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">03</span> — Process</div>
+        <div class="process-head">
+          <h2>How we work</h2>
+        </div>
+
+        <div class="how-subsection">
+          <h3 class="how-subhead">Music Production</h3>
+          <p class="how-intro">Same brief, scored four different ways for Varick. Three directions we moved past before landing on the one that shipped, each draft built from the brand's motifs, not a genre reference.</p>
+          <div class="style-grid">
+            <div>
+              <div class="frame" data-video="videos/varick-draft.mp4">
+                <video muted playsinline preload="none" poster="images/posters/varick-draft.jpg"><source src="videos/varick-draft.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Rejected—Draft 1</p>
+            </div>
+            <div>
+              <div class="frame" data-video="videos/varick-draft2.mp4">
+                <video muted playsinline preload="none" poster="images/posters/varick-draft2.jpg"><source src="videos/varick-draft2.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Rejected—Draft 2</p>
+            </div>
+            <div>
+              <div class="frame" data-video="videos/varick-comp3.mp4">
+                <video muted playsinline preload="none" poster="images/posters/varick-comp3.jpg"><source src="videos/varick-comp3.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Rejected—Draft 3</p>
+            </div>
+            <div>
+              <div class="frame" data-video="videos/varick-final.mp4">
+                <video muted playsinline preload="none" poster="images/posters/varick-final.jpg"><source src="videos/varick-final.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label style-label-selected">Selected—Final</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="how-subsection">
+          <h3 class="how-subhead">Sound Design</h3>
+          <p class="how-intro">The SFX palette gets built around the brand, not just the picture: dark and cinematic for Draconic, playful for Solana, classy for Mocha.</p>
+          <div class="scene-compare-3">
+            <div>
+              <div class="frame" data-video="videos/sfx-draconic.mp4">
+                <video muted playsinline preload="none" poster="images/posters/sfx-draconic.jpg"><source src="videos/sfx-draconic.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Draconic—Dark &amp; Cinematic</p>
+            </div>
+            <div>
+              <div class="frame" data-video="videos/sfx-solana.mp4">
+                <video muted playsinline preload="none" poster="images/posters/sfx-solana.jpg"><source src="videos/sfx-solana.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Solana—Playful</p>
+            </div>
+            <div>
+              <div class="frame" data-video="videos/sfx-mocha-showcase.mp4">
+                <video muted playsinline preload="none" poster="images/posters/sfx-mocha-showcase.jpg"><source src="videos/sfx-mocha-showcase.mp4" type="video/mp4"></video>
+                <button class="play-btn" aria-label="Play video"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></button>
+              </div>
+              <p class="style-label">Mocha—Classy</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Impact of sonic branding -->
+    <section class="slide slide-statement" data-slide="3">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">04</span> — Why It Matters</div>
+        <div class="statement-head">
+          <h2>Impact of <span class="accent">sonic branding</span></h2>
+        </div>
+        <div class="impact-grid">
+          <div class="impact-card">
+            <div class="num mono">01</div>
+            <p>Boosts brand recall</p>
+          </div>
+          <div class="impact-card">
+            <div class="num mono">02</div>
+            <p>Drives emotional connection</p>
+          </div>
+          <div class="impact-card">
+            <div class="num mono">03</div>
+            <p>Increases brand influence</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Unique constraints -->
+    <section class="slide slide-statement" data-slide="4">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">05</span> — Scope Boundary</div>
+        <div class="statement-head">
+          <h2>Unique <span class="accent">constraints</span></h2>
+        </div>
+        <div class="constraint-block">
+          <p class="not-line">Not building out full <strong>brand sonic guidelines</strong>.</p>
+          <p class="is-line">Establishing sonic patterns — how the brand narrative translates to audio.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Current scope -->
+    <section class="slide slide-statement" data-slide="5">
+      <div class="slide-inner">
+        <div class="slide-eyebrow eyebrow"><span class="idx">06</span> — Current Scope</div>
+        <div class="statement-head">
+          <h2>Current <span class="accent">scope</span></h2>
+        </div>
+        <div class="scope-list">
+          <div class="scope-item">
+            <span class="scope-num mono">01</span>
+            <div class="scope-text">
+              <h3>Define sonic style</h3>
+              <p>The audio identity the brand narrative translates into.</p>
+            </div>
+          </div>
+          <div class="scope-item">
+            <span class="scope-num mono">02</span>
+            <div class="scope-text">
+              <h3>Create in-product SFX</h3>
+              <p>Applied sound design for in-product moments.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="deck-footer">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8"/></svg>
+    </button>
+    <div class="dots" id="dots"></div>
+    <button class="nav-btn" id="nextBtn" aria-label="Next slide">
+      <svg viewBox="0 0 24 24"><path d="M9 4l8 8-8 8"/></svg>
+    </button>
+  </footer>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const dotsWrap = document.getElementById('dots');
+  const curIdxEl = document.getElementById('curIdx');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function pauseAllVideos(){
+    document.querySelectorAll('video').forEach(v => {
+      if(!v.paused){ v.pause(); }
+    });
+  }
+
+  function goTo(i){
+    if(i < 0 || i >= total || i === current){ return; }
+    slides[current].classList.remove('active');
+    slides[i].classList.add('active');
+    dots[current].classList.remove('active');
+    dots[i].classList.add('active');
+    pauseAllVideos();
+    current = i;
+    curIdxEl.textContent = String(current + 1).padStart(2, '0');
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+  }
+
+  function next(){ goTo(current + 1); }
+  function prev(){ goTo(current - 1); }
+
+  // TODO(human): add number-key navigation (1-6 jumps to that slide)
+
+  prevBtn.addEventListener('click', prev);
+  nextBtn.addEventListener('click', next);
+  document.getElementById('zoneLeft').addEventListener('click', prev);
+  document.getElementById('zoneRight').addEventListener('click', next);
+  prevBtn.disabled = true;
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); next(); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); prev(); }
+  });
+
+  // click-to-play for every video frame (full-size and grid thumbnails)
+  document.querySelectorAll('.video-frame, .frame').forEach(frame => {
+    const video = frame.querySelector('video');
+    const btn = frame.querySelector('.play-btn');
+    if(!video || !btn) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      video.muted = false;
+      video.controls = true;
+      video.play();
+      frame.classList.add('is-playing');
+    });
+    video.addEventListener('pause', () => {
+      frame.classList.remove('is-playing');
+    });
+    video.addEventListener('ended', () => {
+      frame.classList.remove('is-playing');
+      video.controls = false;
+    });
+  });
+</script>
+
+</body>
+</html>
